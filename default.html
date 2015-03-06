@@ -1,0 +1,210 @@
+<!DOCTYPE html> 
+<html>  
+<head> 
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=7,IE=9">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
+    <title>Default Cluster Layer</title>  
+    <link rel="shortcut icon" href="//esri.github.io/quickstart-map-js/images/favicon.ico">
+    <!-- ArcGIS API for JavaScript CSS-->
+    <link rel="stylesheet" href="https://js.arcgis.com/3.13/esri/css/esri.css">
+
+    <style>
+        html, body, #mapDiv {
+          height: 100%;
+          width: 100%;
+          margin: 0;
+          background-color: rgb(34, 35, 39);
+        }
+
+        #search {
+            display: block;
+            position: absolute;
+            z-index: 2;
+            top: 19px;
+            left: 62px;
+        }
+
+        #homeButton {
+            position: absolute;
+            top: 95px;
+            left: 16px;
+            z-index: 50;
+        }
+
+        .HomeButton .home {
+            width: 27px;
+            height: 27px;            
+        }
+
+        /* Geocoder */
+        .simpleGeocoder .esriGeocoderContainer {
+            width: 225px;
+        }
+
+        /* Zoom buttons */        
+        .esriSimpleSliderTL {
+            left: 16px;            
+        }
+
+        /* Popup */
+        .esriPopup.light .contentPane {
+            padding-top: 0;
+        }
+
+        .esriPopup.light .contentPane > p {
+            margin: 5px 0;
+        }
+
+    </style>
+    <script type="text/javascript">
+        window.dojoConfig = {
+            async: true,
+            packages: [
+            {
+                name: 'app',
+                location: window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')) + '/src'
+            }
+        ]};
+    </script>
+
+    <!-- ArcGIS API for JavaScript library references -->
+    <script src="https://js.arcgis.com/3.13compact"></script>
+    <script>
+    require(["esri/map",
+        "esri/dijit/Geocoder",
+        "esri/dijit/HomeButton",
+        "esri/InfoTemplate",
+        "esri/graphic",
+        "app/clusterfeaturelayer",
+        "dojo/domReady!"],
+      function (Map, Geocoder, HomeButton, InfoTemplate, Graphic, ClusterFeatureLayer) {
+        
+        // Locals
+        var map,
+            popup,
+            clusterLayer,
+            geocoder,
+            infoTemplate,
+            selectedSym;
+
+        // Create map
+        map = new Map("mapDiv", {
+            basemap: "dark-gray",
+            center: [-43, 40],
+            zoom: 3
+        });
+
+        // Add clusters 
+        map.on("load", function () {
+            // Add layer
+            addClusterLayer();
+            addClusterLayerEvents();
+        });
+
+        // Save the last selected graphic
+        map.infoWindow.on("selection-change", function () {
+            addSelectedFeature();
+        });
+
+        // Create widget
+        geocoder = new Geocoder({
+            value: "Washington, D. C., District of Columbia, United States",
+            autoNavigate: true,
+            maxLocations: 25,
+            autoComplete: true,
+            arcgisGeocoder: {
+            outFields: "Place_addr, PlaceName, Score"
+            },
+            map: map
+            }, "search");
+        geocoder.startup();
+
+        var home = new HomeButton({
+            map: map
+        }, "homeButton");
+        home.startup();
+
+        // Set popup
+        popup = map.infoWindow;
+        popup.highlight = false;
+        popup.titleInBody = false;
+        popup.domNode.className += " light";
+
+        // Popup content
+        infoTemplate = new InfoTemplate("<b>City Data</b>", "<p>NAME: ${NAME}</p><p>COUNTRY: ${COUNTRY}</p><p>CAPITAL: ${CAPITAL}</p><p>POPULATION: ${POPULATION}</p>");
+ 
+        // Create a feature layer to get feature service
+        function addClusterLayer() {
+            clusterLayer = new ClusterFeatureLayer({
+                "url": "http://services.arcgis.com/oKgs2tbjK6zwTdvi/arcgis/rest/services/Major_World_Cities/FeatureServer/0",
+                "distance": 75,
+                "id": "clusters",
+                "labelColor": "#fff",
+                "resolution": map.extent.getWidth() / map.width,
+                "singleTemplate": infoTemplate,
+                "useDefaultSymbol": false,
+                "zoomOnClick": true,
+                "showSingles": true,
+                "objectIdField": "FID",
+                outFields: ["NAME", "COUNTRY", "POPULATION", "CAPITAL"]
+            });
+
+            map.addLayer(clusterLayer);
+        }
+
+        // Hide popup if selected feature is clustered
+        function onClustersShown(clusters) {
+            var  i = 0,
+                extent;
+            if (map.infoWindow.isShowing && map.infoWindow._lastSelected) {
+                for (i; i < clusters.length; i++) {
+                    if (clusters[i].attributes.clusterCount > 1) {
+                        extent = clusterLayer._getClusterExtent(clusters[i]);
+                        if (extent.contains(map.infoWindow._lastSelected.geometry)) {
+                            map.infoWindow.hide();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Wire cluster layer events
+        function addClusterLayerEvents() {
+            // Clusters drawn
+            clusterLayer.on("clusters-shown", onClustersShown);
+        }
+
+        // Set selected
+        function addSelectedFeature() {
+            var selIndex = map.infoWindow.selectedIndex,
+                selFeature;
+            if (selIndex !== -1) {
+                selFeature = map.infoWindow.features[selIndex];
+                // Remove old feature first
+                removeSelectedFeature();
+                // Add new graphic
+                map.infoWindow._lastSelected = new Graphic(selFeature.toJson());
+                map.infoWindow._lastSelected.setSymbol(selectedSym);
+                map.graphics.add(map.infoWindow._lastSelected);
+            }
+        }
+
+        // Remove selected
+        function removeSelectedFeature() {
+            if (map.infoWindow._lastSelected) {
+                map.graphics.remove(map.infoWindow._lastSelected);
+                map.infoWindow._lastSelected = null;
+            }
+        }
+
+    });
+</script>
+</head>
+<body>
+    <div id="mapDiv"></div>
+    <div id="search"></div>
+    <div id="homeButton"></div>
+</body>
+</html>
