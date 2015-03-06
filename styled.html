@@ -1,0 +1,449 @@
+<!DOCTYPE html> 
+<html>  
+<head> 
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=7,IE=9">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
+    <title>Styled Cluster Layer</title>  
+    <link rel="shortcut icon" href="//esri.github.io/quickstart-map-js/images/favicon.ico">
+    <!-- ArcGIS API for JavaScript CSS-->
+    <link rel="stylesheet" href="https://js.arcgis.com/3.13/esri/css/esri.css">
+
+    <!-- Bootstrap (getbootstrap.com) and Bootstrap-map-js (github.com/esri/bootstrap-map-js) -->
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//esri.github.io/bootstrap-map-js/src/css/bootstrapmap.css">
+
+    <!-- Fast fonts --> 
+    <link rel="stylesheet" href="//fast.fonts.net/cssapi/3706abc4-0756-424b-b07b-1748122f85d8.css")>
+
+    <style>
+        html, body, #mapDiv {
+          height: 100%;
+          width: 100%;
+          margin: 0;
+          background-color: rgb(34, 35, 39);
+        }
+
+        /* Fast Font */
+
+        body, .esriPopupWrapper, .simpleGeocoder .esriGeocoderContainer, .esriSimpleSlider div, g > text {
+            font-family: "Avenir LT W01 35 Light"; 
+        }
+
+        #search {
+            display: block;
+            position: absolute;
+            z-index: 2;
+            top: 15px;
+            left: 62px;
+        }
+
+        #homeButton {
+            position: absolute;
+            top: 86px;
+            left: 16px;
+            z-index: 50;
+        }
+
+        /* Extra popup styling */
+
+        .esriPopup .title {
+            color: #A34527;
+        }
+        .esriPopup a {
+            color: rgb(149,68,43);
+            text-decoration: none;
+        }
+        .esriPopup.light .titlePane {
+            background-color: rgba(25,25,25,1);
+            font-size: 16px;
+        }
+        .esriPopup .titleButton.close {
+            filter: alpha(opacity=100);
+            opacity: 1;
+            text-shadow: none;
+        }
+        .esriPopup.light .contentPane > p {
+            margin: 5px 0;
+        }
+        .esriPopup.light .esriPopupWrapper, .esriPopup.light .pointer, .esriPopup.light .outerPointer {
+             box-shadow: none;
+            -webkit-box-shadow: none;
+        }
+        .esriPopup.light .pointer.top, .esriPopup.light .pointer.topLeft, .esriPopup.light .pointer.topRight {
+            background-color: rgba(25,25,25,1);
+        }
+
+        /* Geocoder */
+
+        .simpleGeocoder .esriGeocoderContainer {
+            width: 225px;
+        }
+        .simpleGeocoder .esriGeocoder input {
+            width: 160px;
+            font-size: 15px;
+            padding: 6px 0 4px;
+        }
+        .simpleGeocoder .esriGeocoderIcon {
+            margin: 7px 0 6px 6px;
+        }
+        .simpleGeocoder .esriGeocoderHasValue .esriGeocoderReset {
+            margin: 7px 4px 5px 1px;
+        }
+
+        .esriSimpleSlider div {
+            width: 28px;
+            height: 28px;
+        }
+
+        /* Zoom buttons */
+        
+        .esriSimpleSliderTL {
+            left: 16px;            
+        }
+
+        .esriSimpleSliderVertical .esriSimpleSliderIncrementButton, .esriSimpleSliderVertical .esriSimpleSliderDecrementButton {
+            font-size: 24px;
+            line-height: 25px;
+        }
+
+    </style>
+
+    <script type="text/javascript">
+        window.dojoConfig = {
+            async: true,
+            packages: [
+            {
+                name: 'app',
+                location: window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')) + '/src'
+            }
+        ]};
+    </script>
+
+    <!-- ArcGIS API for JavaScript library references -->
+    <script src="https://js.arcgis.com/3.13compact"></script>
+    <script>
+    require(["esri/map",
+        "esri/dijit/Geocoder",
+        "esri/dijit/HomeButton",
+        "esri/renderers/SimpleRenderer",
+        "esri/symbols/PictureMarkerSymbol",
+        "esri/layers/FeatureLayer",
+        "esri/InfoTemplate",
+        "esri/graphic",
+        "esri/graphicsUtils",
+        "app/clusterfeaturelayer",
+        "esri/symbols/SimpleMarkerSymbol",
+        "esri/symbols/SimpleLineSymbol",
+        "esri/symbols/SimpleFillSymbol",
+        "esri/symbols/PictureMarkerSymbol",
+        "esri/renderers/ClassBreaksRenderer",
+        "esri/renderers/HeatmapRenderer",
+        "dojo/_base/Color",
+        "dojo/on",
+        "dojo/dom-style",
+        "dojo/_base/fx",
+        "dojo/fx/easing",
+        "dojo/dom",
+        "dojo/domReady!"],
+      function (Map, Geocoder, HomeButton, SimpleRenderer, PictureMarkerSymbol, FeatureLayer, InfoTemplate, Graphic, graphicsUtils, ClusterFeatureLayer, SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol, PictureMarkerSymbol, ClassBreaksRenderer, HeatmapRenderer, Color, on, domStyle, fx, easing, dom) {
+        
+        // Locals
+        var map,
+            popup,
+            clusterLayer,
+            geocoder,
+            infoTemplate,
+            defaultSym,
+            selectedSym,
+            activeClusterElement;
+
+        // Create map
+        map = new Map("mapDiv", {
+            basemap: "dark-gray",
+            center: [-120, 50],
+            zoom: 3
+        });
+
+        // Create widget
+        geocoder = new Geocoder({
+            value: "California, United States",
+            autoNavigate: true,
+            maxLocations: 25,
+            autoComplete: true,
+            arcgisGeocoder: {
+            outFields: "Place_addr, PlaceName, Score"
+            },
+            map: map
+            }, "search");
+        geocoder.startup();
+
+        var home = new HomeButton({
+            map: map
+        }, "homeButton");
+        home.startup();
+
+        // Add raw points
+        // var featureLayer = new FeatureLayer("http://services.arcgis.com/oKgs2tbjK6zwTdvi/arcgis/rest/services/Major_World_Cities/FeatureServer/0", {
+        //         infoTemplate: infoTemplate,
+        //         outFields: ["*"]
+        //     });
+        // map.addLayer(featureLayer);
+
+        // Add heatmap
+        // var featureLayer2 = new FeatureLayer("http://services.arcgis.com/oKgs2tbjK6zwTdvi/arcgis/rest/services/Major_World_Cities/FeatureServer/0");
+        // var heatmapRenderer = new HeatmapRenderer();
+        // featureLayer2.setRenderer(heatmapRenderer);
+        // map.addLayer(featureLayer2);
+
+        // Add clusters 
+        map.on("load", function () {
+            // Add layer
+            addClusterLayer();
+            addClusterLayerEvents();
+        });
+
+        // Set popup
+        popup = map.infoWindow;
+        popup.highlight = false;
+        popup.titleInBody = false;
+        popup.domNode.className += " light";
+        //popup.domNode.style.marginTop = "-17px";  // for pins only
+
+        // Popup content
+        infoTemplate = new InfoTemplate("Seismic Activity > 4.0", "<p>Location: ${LOCATION}</p><p>Magnitude: ${OTHER_MAG1}</p><p>Date: ${YEAR}/${MONTH}/${DAY}</p>");
+
+        // Option 1: Esri marker for single locations and selections        
+        // defaultSym = new createPictureSymbol("./images/blue-cluster-pin.png", 0, 8, 9, 16);
+        // selectedSym = new createPictureSymbol("./images/blue-cluster-pin.png", 0, 9, 11, 20);
+
+        // Option 2: Use circle markers for symbols - Red
+        defaultSym = new SimpleMarkerSymbol("circle", 16,
+                        new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([102,0,0, 0.55]), 3),
+                        new Color([255, 255, 255, 1]));
+
+        selectedSym = new SimpleMarkerSymbol("circle", 16,
+                        new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([102,0,0, 0.85]), 3),
+                        new Color([255, 255, 255, 1]));
+
+        // Create a feature layer to get feature service
+        function addClusterLayer() {
+            var renderer,
+                small,
+                medium,
+                large,
+                xlarge;
+
+            // Add cluster renderer
+            clusterLayer = new ClusterFeatureLayer({
+                //"url": "http://services.arcgis.com/oKgs2tbjK6zwTdvi/arcgis/rest/services/Major_World_Cities/FeatureServer/0",
+                //"url": "http://services.arcgis.com/BG6nSlhZSAWtExvp/arcgis/rest/services/GlobalSeismographyNetwork/FeatureServer/0",
+                "url": "http://services1.arcgis.com/EwZCWiHAzgPcnGng/arcgis/rest/services/Magnitude_7_Earthquakes/FeatureServer/0",
+                "distance": 95,
+                "id": "clusters",
+                "labelColor": "#fff",
+                "resolution": map.extent.getWidth() / map.width,
+                //"singleColor": "#888",
+                "singleSymbol": defaultSym,
+                "singleTemplate": infoTemplate,
+                "useDefaultSymbol": false,
+                "zoomOnClick": true,
+                "showSingles": true,
+                "objectIdField": "FID",
+                outFields: ["LOCATION", "YEAR", "MONTH", "DAY", "OTHER_MAG1"]
+            });
+
+            renderer = new ClassBreaksRenderer(defaultSym, "clusterCount");
+
+            // Red Clusters
+            small = new SimpleMarkerSymbol("circle", 25,
+                        new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([212,116,60,0.5]), 15),
+                        new Color([212,116,60,0.75]));
+            medium = new SimpleMarkerSymbol("circle", 50,
+                        new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([178,70,37,0.5]), 15),
+                        new Color([178,70,37,0.75]));
+            large = new SimpleMarkerSymbol("circle", 80,
+                        new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([144,24,13,0.5]), 15),
+                        new Color([144,24,13,0.75]));
+            xlarge = new SimpleMarkerSymbol("circle", 110,
+                        new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([102,0,0,0.5]), 15),
+                        new Color([102,0,0,0.75]));
+
+            // Break values - can adjust easily
+            renderer.addBreak(2, 50, small);
+            renderer.addBreak(50, 250, medium);
+            renderer.addBreak(250, 1000, large);
+            renderer.addBreak(1000, 50000, xlarge);
+
+            // Providing a ClassBreakRenderer is also optional
+            clusterLayer.setRenderer(renderer);
+            map.addLayer(clusterLayer);
+        }
+
+        // Create png marker
+        // function createPictureSymbol(url, xOffset, yOffset, xWidth, yHeight) {
+        //     return new PictureMarkerSymbol(
+        //         {
+        //             "angle": 0,
+        //             "xoffset": xOffset,
+        //             "yoffset": yOffset,
+        //             "type": "esriPMS",
+        //             "url": url,
+        //             "contentType": "image/png",
+        //             "width": xWidth,
+        //             "height": yHeight
+        //         }
+        //     );
+        // }
+
+        // Create new graphic and add to map.graphics
+        function addSelectedFeature() {
+            var selIndex = map.infoWindow.selectedIndex,
+                selFeature;
+            if (selIndex !== -1) {
+                selFeature = map.infoWindow.features[selIndex];
+                // Remove old feature first
+                removeSelectedFeature();
+                // Add new graphic
+                map.infoWindow._lastSelected = new Graphic(selFeature.toJson());
+                map.infoWindow._lastSelected.setSymbol(selectedSym);
+                map.graphics.add(map.infoWindow._lastSelected);
+            }
+        }
+
+        // Remove graphic from map.graphics
+        function removeSelectedFeature() {
+            if (map.infoWindow._lastSelected) {
+                map.graphics.remove(map.infoWindow._lastSelected);
+                map.infoWindow._lastSelected = null;
+            }
+        }
+
+        // Highlight clusters
+        function setActiveClusterOpacity(elem, fillOpacity, strokeOpacity) {
+            var textElm;
+            if (elem) {
+                elem.setAttribute("fill-opacity", fillOpacity);
+                elem.setAttribute("stroke-opacity", strokeOpacity);
+                // Overide inherited properties for the text in the circle
+                textElm = elem.nextElementSibling;
+                if (textElm && textElm.nodeName === "text") {
+                    textElm.setAttribute("fill-opacity", 1);
+                }
+            }
+        }
+
+        // Hide popup if selected feature is clustered
+        function onClustersShown(clusters) {
+            var  i = 0,
+                extent;
+            if (map.infoWindow.isShowing && map.infoWindow._lastSelected) {
+                for (i; i < clusters.length; i++) {
+                    if (clusters[i].attributes.clusterCount > 1) {
+                        extent = clusterLayer._getClusterExtent(clusters[i]);
+                        if (extent.contains(map.infoWindow._lastSelected.geometry)) {
+                            map.infoWindow.hide();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Wire cluster layer events
+        function addClusterLayerEvents() {
+            // Mouse over events
+            clusterLayer.on("mouse-over", onMouseOverCluster);
+            clusterLayer.on("mouse-out", onMouseOutCluster);
+            // Clusters drawn
+            clusterLayer.on("clusters-shown", onClustersShown);
+        }
+
+        // Save the last selected graphic so we can highlight it
+        map.infoWindow.on("selection-change", function () {
+            addSelectedFeature();
+            animateInfoWindow();
+        });
+
+        // Clear selected graphic when infoWindow is hidden
+        map.infoWindow.on("hide", function () {
+            // re-activate cluster
+            setActiveClusterOpacity(activeClusterElement, 0.75, 0.5);
+            removeSelectedFeature();
+        });
+
+        // Popup enhancements
+        function onMouseOverCluster(e) {
+            if (e.graphic.attributes.clusterCount === 1) {
+                e.graphic._graphicsLayer.onClick(e);
+            } else {
+                if (e.target.nodeName === "circle") {
+                    activeClusterElement = e.target;
+                    setActiveClusterOpacity(activeClusterElement, 1, 1);
+                } else {
+                    setActiveClusterOpacity(activeClusterElement, 1, 1);
+                }
+            }
+        }
+
+        function onMouseOutCluster(e) {
+            if (e.graphic.attributes.clusterCount > 1) {
+                if (e.target.nodeName === "circle" || e.target.nodeName === "text") {
+                    setActiveClusterOpacity(activeClusterElement, 0.75, 0.5);
+                    setActiveClusterOpacity(e.target, 0.75, 0.5);
+                }
+            }
+        }
+
+        function animateInfoWindow() {
+            domStyle.set(map.infoWindow.domNode, "opacity", 0);
+            fx.fadeIn({node: map.infoWindow.domNode,
+                duration: 150,
+                easing: easing.quadIn}).play();
+        }
+
+        // Click to close
+        map.on('click', function () {
+            if (map.infoWindow.isShowing) {
+                map.infoWindow.hide();
+            }
+        });
+
+        // ESC is pressed
+        map.on('key-down', function (e) {
+            if (e.keyCode === 27) {
+                map.infoWindow.hide();
+            }
+        });
+
+        // Dynamically reposition popups when map moves
+        map.on('extent-change', function () {
+            if (map.infoWindow.isShowing) {
+                map.infoWindow.reposition();
+            }
+        });
+
+        // Auto recenter map - optional
+        autoRecenter(map);
+
+        function autoRecenter(map) {
+          on(map, 'load', function (map) {
+            on(window, 'resize', map, map.resize);
+          });
+          on(map, 'resize',  function(extent, width, height) { 
+            map.__resizeCenter = map.extent.getCenter();
+            setTimeout(function() {
+                map.centerAt(map.__resizeCenter);
+            }, 100);
+          });
+        }
+
+    });
+</script>
+</head>
+<body>
+    <div id="mapDiv"></div>
+    <div id="search"></div>
+    <div id="homeButton"></div>
+</body>
+</html>
