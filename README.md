@@ -1,6 +1,6 @@
 # Cluster Layer JS
 
-An easy way to cluster 1000s of features in any feature service. Set the styles, sizes and density to best fit your data.
+An easy way to cluster 1000s of features in any point feature service. Set the styles, sizes and density to best fit your data.
 
 [View demo](http://esri.github.com/cluster-layer-js/index.html)
 
@@ -49,6 +49,8 @@ map.addLayer(clusterLayer);
 
 ## Developer Notes
 
+* Be sure to set the distance (pixels), the size will depend on the size of your styled clusters
+* By default it pulls 1000 features at time
 * Set the max features to cluster
 * Options
 
@@ -84,7 +86,7 @@ map.addLayer(clusterLayer);
     //     singleRenderer:    Renderer?
     //         Optional. Can provide a renderer for single features to override the default renderer.
     //     singleTemplate:    PopupTemplate?
-    //         PopupTemplate</a>. Optional. Popup template used to format attributes for graphics that represent single points. Default shows all attributes as 'attribute = value' (not recommended).
+    //         PopupTemplate. Optional. Popup template used to format attributes for graphics that represent single points. Default shows all attributes as 'attribute = value' (not recommended).
     //     maxSingles:    Number?
     //         Optional. Threshold for whether or not to show graphics for points in a cluster. Default is 1000.
     //     font:    TextSymbol?
@@ -92,6 +94,11 @@ map.addLayer(clusterLayer);
     //     spatialReference:    SpatialReference?
     //         Optional. Spatial reference for all graphics in the layer. This has to match the spatial reference of the map. Default is 102100. Omit this if the map uses basemaps in web mercator.
 ``` 
+
+## Credits
+
+* The core code was borrowed from the [ArcGIS sample](https://developers.arcgis.com/javascript/jssamples/layers_point_clustering.html) but much of it was re-written
+* [Odoe](https://github.com/odoe/esri-clusterfeaturelayer) also contributed as well
 
 ## Contributing
 
