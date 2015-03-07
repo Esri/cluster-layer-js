@@ -1,6 +1,6 @@
 # Cluster Layer JS
 
-An easy way to cluster 1000s of features in any point feature service. Set the styles, sizes and density to best fit your data.
+An easy way to cluster 1000s of features for any point feature service. Set the styles, sizes and density to best fit your data.
 
 [View demo](http://esri.github.com/cluster-layer-js/index.html)
 
@@ -16,7 +16,7 @@ An easy way to cluster 1000s of features in any point feature service. Set the s
 ## Example
 
 ``` HTML
-// Create a cluster layer that points to a feature service
+// Create a cluster layer for a point feature service
 
 clusterLayer = new ClusterFeatureLayer({
     "url": "http://services.arcgis.com/oKgs2tbjK6zwTdvi/arcgis/rest/services/Major_World_Cities/FeatureServer/0",
@@ -51,8 +51,8 @@ map.addLayer(clusterLayer);
 
 * Be sure to set the distance (pixels), the size will depend on the size of your styled clusters
 * By default it pulls 1000 features at time
-* Set the max features to cluster
-* Options
+* You can also set the max features to cluster, it can process 100,000 in about 8-10s
+* Here are the constructor options (more work needs to be done here to set better defaults)
 
 ``` HTML
 	// options:
