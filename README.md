@@ -1,6 +1,6 @@
 # Cluster Layer JS
 
-An easy way to cluster 1000s of features in any feature service. Set the styles, sizes and density to best fit your data.
+An easy way to cluster 1000s of features in any point feature service. Set the styles, sizes and density to best fit your data.
 
 [View demo](http://esri.github.com/cluster-layer-js/index.html)
 
