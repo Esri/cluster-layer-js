@@ -51,10 +51,8 @@
         }
 
         /* Cover */
-
         .cover {
-            /*padding: 0 20px;*/
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.5);
             padding: 30px;
             border-radius: 5px
         }
@@ -92,41 +90,30 @@
             background-color: rgb(178, 70, 37);
         }
 
-        /*
-        * Footer
-        */
-
+        /* Footer */
         .mastfoot {
             color: #999; /* IE8 proofing */
             color: rgba(255,255,255,.5);
         }
 
-
-        /*
-        * Affix and center
-        */
-
+        /* Affix and center */
         @media (min-width: 768px) {
         /* Pull out the header and footer */
         .mastfoot {
-        position: fixed;
-        bottom: 0;
+            position: fixed;
+            bottom: 0;
         }
         /* Start the vertical centering */
         .site-wrapper-inner {
-        vertical-align: middle;
+            vertical-align: middle;
         }
         /* Handle the widths */
-        .masthead,
-        .mastfoot,
-        .cover-container {
-        width: 100%; /* Must be percentage or pixels for horizontal alignment */
-        }
+            .cover-container {
+                width: 100%; /* Must be percentage or pixels for horizontal alignment */
+            }
         }
 
         @media (min-width: 992px) {
-            .masthead,
-            .mastfoot,
             .cover-container {
             width: 700px;
             }
