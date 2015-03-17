@@ -239,7 +239,6 @@ define([
             }).then(lang.hitch(this, function(response) {
                 this._defaultRenderer = this._singleRenderer ||
                     rendererJsonUtil.fromJson(response.drawingInfo.renderer);
-                this.native_geometryType = response.geometryType;
                 if (response.geometryType === 'esriGeometryPolygon') {
                     this._useDefaultSymbol = false;
                     console.info('polygon geometry will be converted to points');
@@ -336,7 +335,7 @@ define([
         },
 
         // When the popup appears, toggle the cluster to singles or the singles to a cluster
-        _popupVisibilityChange: function (e) {
+        _popupVisibilityChange: function () {
             var show = this._map.infoWindow.isShowing;
             // Popup hidden, show cluster
             this._showClickedCluster(!show);
@@ -362,7 +361,7 @@ define([
         },
 
         // override esri/layers/GraphicsLayer methods
-        _setMap: function (map, surface) {
+        _setMap: function (map) {
             this._query.outSpatialReference = map.spatialReference;
             this._query.returnGeometry = true;
             this._query.outFields = this._outFields;
@@ -816,8 +815,6 @@ define([
             // debug
             // var start = new Date().valueOf();
             // console.debug('#_showAllClusters start');
-            
-            var len = this._clusters.length;
 
             for ( var i = 0, il = this._clusters.length; i < il; i++ ) {
                 this._showCluster(this._clusters[i]);
@@ -832,8 +829,7 @@ define([
         // Add graphic and to layer
         _showCluster: function(c) {
             var point = new Point(c.x, c.y, this._sr);
-            var count = c.attributes.clusterCount;
-
+            
             var g = new Graphic(point, null, c.attributes);
             g.setSymbol(this._getRenderedSymbol(g));
             this.add(g);
