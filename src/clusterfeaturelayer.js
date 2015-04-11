@@ -13,8 +13,8 @@ define([
     'esri/geometry/Extent',
     'esri/graphic',
 
-    "esri/config",
-    "esri/geometry/normalizeUtils",
+    'esri/config',
+    'esri/geometry/normalizeUtils',
 
     'esri/symbols/SimpleMarkerSymbol',
     'esri/symbols/SimpleLineSymbol',
@@ -119,9 +119,9 @@ define([
       }
       // union of Chrome, FF, IE, and Safari console methods
       var m = [
-        "log", "info", "warn", "error", "debug", "trace", "dir", "group",
-        "groupCollapsed", "groupEnd", "time", "timeEnd", "profile", "profileEnd",
-        "dirxml", "assert", "count", "markTimeline", "timeStamp", "clear"
+        'log', 'info', 'warn', 'error', 'debug', 'trace', 'dir', 'group',
+        'groupCollapsed', 'groupEnd', 'time', 'timeEnd', 'profile', 'profileEnd',
+        'dirxml', 'assert', 'count', 'markTimeline', 'timeStamp', 'clear'
       ];
       // define undefined methods as noops to prevent errors
       for (var i = 0; i < m.length; i++) {
@@ -183,7 +183,7 @@ define([
             this._zoomOnClick = options.hasOwnProperty('zoomOnClick') ? options.zoomOnClick : true;
             // symbol for single graphics
             //this._singleSym = options.singleSymbol || new SimpleMarkerSymbol('circle', 6, null, new Color('#888'));
-            this._singleSym = options.singleSymbol || new SimpleMarkerSymbol("circle", 16,
+            this._singleSym = options.singleSymbol || new SimpleMarkerSymbol('circle', 16,
                                     new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([85, 125, 140, 1]), 3),
                                     new Color([255, 255, 255, 1]));
             this._singleTemplate = options.singleTemplate || new PopupTemplate({ 'title': '', 'description': '{*}' });
@@ -226,7 +226,7 @@ define([
 
             this._getServiceDetails();
 
-            esriConfig.defaults.geometryService = "http://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/Geometry/GeometryServer";
+            esriConfig.defaults.geometryService = 'http://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/Geometry/GeometryServer';
         },
 
         _getServiceDetails: function () {
@@ -378,23 +378,23 @@ define([
                         on.once(this, 'details-loaded', lang.hitch(this, function() {
                             if (!this.renderer) {
              
-                                this._singleSym = this._singleSym || new SimpleMarkerSymbol("circle", 16,
+                                this._singleSym = this._singleSym || new SimpleMarkerSymbol('circle', 16,
                                     new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([85, 125, 140, 1]), 3),
                                     new Color([255, 255, 255, .5]));
 
                                 var renderer = new ClassBreaksRenderer(this._singleSym, 'clusterCount');
 
                                 // Blue clusters
-                                small = new SimpleMarkerSymbol("circle", 25,
+                                small = new SimpleMarkerSymbol('circle', 25,
                                             new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([140,177,210,0.35]), 15),
                                             new Color([140,177,210,0.75]));
-                                medium = new SimpleMarkerSymbol("circle", 50,
+                                medium = new SimpleMarkerSymbol('circle', 50,
                                             new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([97,147,179,0.35]), 15),
                                             new Color([97,147,179,0.75]));
-                                large = new SimpleMarkerSymbol("circle", 80,
+                                large = new SimpleMarkerSymbol('circle', 80,
                                             new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([59,110,128,0.35]), 15),
                                             new Color([59,110,128,0.75]));
-                                xlarge = new SimpleMarkerSymbol("circle", 110,
+                                xlarge = new SimpleMarkerSymbol('circle', 110,
                                             new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([20,72,77,0.35]), 15),
                                             new Color([20,72,77,0.75]));
                                 
@@ -810,7 +810,7 @@ define([
             this._clusters.push(cluster);
         },
 
-        // Add all graphics to layer and fire "clusters-shown" event
+        // Add all graphics to layer and fire 'clusters-shown' event
         _showAllClusters: function() {
             // debug
             // var start = new Date().valueOf();
