@@ -861,7 +861,7 @@ define([
         _findCluster: function(id) {
             var cg = arrayUtils.filter(this.graphics, function(g) {
                 return ! g.symbol &&
-                    g.attributes.clusterId == c.attributes.clusterId;
+                    g.attributes.clusterId === c.attributes.clusterId;
             });
         },
 
@@ -922,9 +922,9 @@ define([
             // find the cluster graphic
             var cg = arrayUtils.filter(this.graphics, function(g) {
                 return ! g.symbol &&
-                    g.attributes.clusterId == c.attributes.clusterId;
+                    g.attributes.clusterId === c.attributes.clusterId;
             });
-            if ( cg.length == 1 ) {
+            if ( cg.length === 1 ) {
                 cg[0].geometry.update(c.x, c.y);
             } else {
                 console.log('didn not find exactly one cluster geometry to update: ', cg);
@@ -935,10 +935,10 @@ define([
             // find the existing label
             var label = arrayUtils.filter(this.graphics, function(g) {
                 return g.symbol &&
-                    g.symbol.declaredClass == 'esri.symbol.TextSymbol' &&
-                    g.attributes.clusterId == c.attributes.clusterId;
+                    g.symbol.declaredClass === 'esri.symbol.TextSymbol' &&
+                    g.attributes.clusterId === c.attributes.clusterId;
             });
-            if ( label.length == 1 ) {
+            if ( label.length === 1 ) {
                 // console.log('update label...found: ', label);
                 this.remove(label[0]);
                 var newLabel = new TextSymbol(c.attributes.clusterCount)
