@@ -36,7 +36,7 @@ define([
 ], function (
     declare, arrayUtils, lang, Color, connect, on, all,
     SpatialReference, Point, Multipoint, Extent, Graphic,
-    config, normalizeUtils,
+    esriConfig, normalizeUtils,
     SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol, TextSymbol, Font,
     ClassBreaksRenderer,
     esriRequest, symbolJsonUtils, rendererJsonUtil,
