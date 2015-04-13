@@ -13,8 +13,8 @@ define([
     'esri/geometry/Extent',
     'esri/graphic',
 
-    "esri/config",
-    "esri/geometry/normalizeUtils",
+    'esri/config',
+    'esri/geometry/normalizeUtils',
 
     'esri/symbols/SimpleMarkerSymbol',
     'esri/symbols/SimpleLineSymbol',
@@ -36,7 +36,7 @@ define([
 ], function (
     declare, arrayUtils, lang, Color, connect, on, all,
     SpatialReference, Point, Multipoint, Extent, Graphic,
-    config, normalizeUtils,
+    esriConfig, normalizeUtils,
     SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol, TextSymbol, Font,
     ClassBreaksRenderer,
     esriRequest, symbolJsonUtils, rendererJsonUtil,
@@ -119,9 +119,9 @@ define([
       }
       // union of Chrome, FF, IE, and Safari console methods
       var m = [
-        "log", "info", "warn", "error", "debug", "trace", "dir", "group",
-        "groupCollapsed", "groupEnd", "time", "timeEnd", "profile", "profileEnd",
-        "dirxml", "assert", "count", "markTimeline", "timeStamp", "clear"
+        'log', 'info', 'warn', 'error', 'debug', 'trace', 'dir', 'group',
+        'groupCollapsed', 'groupEnd', 'time', 'timeEnd', 'profile', 'profileEnd',
+        'dirxml', 'assert', 'count', 'markTimeline', 'timeStamp', 'clear'
       ];
       // define undefined methods as noops to prevent errors
       for (var i = 0; i < m.length; i++) {
@@ -183,7 +183,7 @@ define([
             this._zoomOnClick = options.hasOwnProperty('zoomOnClick') ? options.zoomOnClick : true;
             // symbol for single graphics
             //this._singleSym = options.singleSymbol || new SimpleMarkerSymbol('circle', 6, null, new Color('#888'));
-            this._singleSym = options.singleSymbol || new SimpleMarkerSymbol("circle", 16,
+            this._singleSym = options.singleSymbol || new SimpleMarkerSymbol('circle', 16,
                                     new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([85, 125, 140, 1]), 3),
                                     new Color([255, 255, 255, 1]));
             this._singleTemplate = options.singleTemplate || new PopupTemplate({ 'title': '', 'description': '{*}' });
@@ -226,7 +226,7 @@ define([
 
             this._getServiceDetails();
 
-            esriConfig.defaults.geometryService = "http://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/Geometry/GeometryServer";
+            esriConfig.defaults.geometryService = 'http://sampleserver6.arcgisonline.com/arcgis/rest/services/Utilities/Geometry/GeometryServer';
         },
 
         _getServiceDetails: function () {
@@ -239,7 +239,6 @@ define([
             }).then(lang.hitch(this, function(response) {
                 this._defaultRenderer = this._singleRenderer ||
                     rendererJsonUtil.fromJson(response.drawingInfo.renderer);
-                this.native_geometryType = response.geometryType;
                 if (response.geometryType === 'esriGeometryPolygon') {
                     this._useDefaultSymbol = false;
                     console.info('polygon geometry will be converted to points');
@@ -336,7 +335,7 @@ define([
         },
 
         // When the popup appears, toggle the cluster to singles or the singles to a cluster
-        _popupVisibilityChange: function (e) {
+        _popupVisibilityChange: function () {
             var show = this._map.infoWindow.isShowing;
             // Popup hidden, show cluster
             this._showClickedCluster(!show);
@@ -362,7 +361,7 @@ define([
         },
 
         // override esri/layers/GraphicsLayer methods
-        _setMap: function (map, surface) {
+        _setMap: function (map) {
             this._query.outSpatialReference = map.spatialReference;
             this._query.returnGeometry = true;
             this._query.outFields = this._outFields;
@@ -379,23 +378,23 @@ define([
                         on.once(this, 'details-loaded', lang.hitch(this, function() {
                             if (!this.renderer) {
              
-                                this._singleSym = this._singleSym || new SimpleMarkerSymbol("circle", 16,
+                                this._singleSym = this._singleSym || new SimpleMarkerSymbol('circle', 16,
                                     new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([85, 125, 140, 1]), 3),
                                     new Color([255, 255, 255, .5]));
 
                                 var renderer = new ClassBreaksRenderer(this._singleSym, 'clusterCount');
 
                                 // Blue clusters
-                                small = new SimpleMarkerSymbol("circle", 25,
+                                small = new SimpleMarkerSymbol('circle', 25,
                                             new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([140,177,210,0.35]), 15),
                                             new Color([140,177,210,0.75]));
-                                medium = new SimpleMarkerSymbol("circle", 50,
+                                medium = new SimpleMarkerSymbol('circle', 50,
                                             new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([97,147,179,0.35]), 15),
                                             new Color([97,147,179,0.75]));
-                                large = new SimpleMarkerSymbol("circle", 80,
+                                large = new SimpleMarkerSymbol('circle', 80,
                                             new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([59,110,128,0.35]), 15),
                                             new Color([59,110,128,0.75]));
-                                xlarge = new SimpleMarkerSymbol("circle", 110,
+                                xlarge = new SimpleMarkerSymbol('circle', 110,
                                             new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([20,72,77,0.35]), 15),
                                             new Color([20,72,77,0.75]));
                                 
@@ -811,13 +810,11 @@ define([
             this._clusters.push(cluster);
         },
 
-        // Add all graphics to layer and fire "clusters-shown" event
+        // Add all graphics to layer and fire 'clusters-shown' event
         _showAllClusters: function() {
             // debug
             // var start = new Date().valueOf();
             // console.debug('#_showAllClusters start');
-            
-            var len = this._clusters.length;
 
             for ( var i = 0, il = this._clusters.length; i < il; i++ ) {
                 this._showCluster(this._clusters[i]);
@@ -832,8 +829,7 @@ define([
         // Add graphic and to layer
         _showCluster: function(c) {
             var point = new Point(c.x, c.y, this._sr);
-            var count = c.attributes.clusterCount;
-
+            
             var g = new Graphic(point, null, c.attributes);
             g.setSymbol(this._getRenderedSymbol(g));
             this.add(g);
@@ -861,7 +857,7 @@ define([
         _findCluster: function(id) {
             var cg = arrayUtils.filter(this.graphics, function(g) {
                 return ! g.symbol &&
-                    g.attributes.clusterId == c.attributes.clusterId;
+                    g.attributes.clusterId === c.attributes.clusterId;
             });
         },
 
@@ -922,9 +918,9 @@ define([
             // find the cluster graphic
             var cg = arrayUtils.filter(this.graphics, function(g) {
                 return ! g.symbol &&
-                    g.attributes.clusterId == c.attributes.clusterId;
+                    g.attributes.clusterId === c.attributes.clusterId;
             });
-            if ( cg.length == 1 ) {
+            if ( cg.length === 1 ) {
                 cg[0].geometry.update(c.x, c.y);
             } else {
                 console.log('didn not find exactly one cluster geometry to update: ', cg);
@@ -935,10 +931,10 @@ define([
             // find the existing label
             var label = arrayUtils.filter(this.graphics, function(g) {
                 return g.symbol &&
-                    g.symbol.declaredClass == 'esri.symbol.TextSymbol' &&
-                    g.attributes.clusterId == c.attributes.clusterId;
+                    g.symbol.declaredClass === 'esri.symbol.TextSymbol' &&
+                    g.attributes.clusterId === c.attributes.clusterId;
             });
-            if ( label.length == 1 ) {
+            if ( label.length === 1 ) {
                 // console.log('update label...found: ', label);
                 this.remove(label[0]);
                 var newLabel = new TextSymbol(c.attributes.clusterCount)
