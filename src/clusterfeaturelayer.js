@@ -366,7 +366,10 @@ define([
             this._query.returnGeometry = true;
             this._query.outFields = this._outFields;
             // listen to extent-change so data is re-clustered when zoom level changes
-            this._extentChange = on(map, 'extent-change', lang.hitch(this, '_reCluster'));
+            this._extentChange = on.pausable(map, 'extent-change', lang.hitch(this, '_reCluster'));
+            if (this.suspended) {
+                this._extentChange.pause();
+            }
             // listen for popup hide/show - hide clusters when pins are shown
             map.infoWindow.on('hide', lang.hitch(this, '_popupVisibilityChange'));
             map.infoWindow.on('show', lang.hitch(this, '_popupVisibilityChange'));
@@ -376,6 +379,13 @@ define([
                     layerAdded.remove();
                     if (!this.detailsLoaded) {
                         on.once(this, 'details-loaded', lang.hitch(this, function() {
+                            this.on('suspend', function(e) {
+                                this._extentChange.pause();
+                            });
+                            this.on('resume', function(e) {
+                                this._extentChange.resume();
+                                this._reCluster();
+                            });
                             if (!this.renderer) {
              
                                 this._singleSym = this._singleSym || new SimpleMarkerSymbol('circle', 16,
@@ -404,7 +414,9 @@ define([
                                 renderer.addBreak(100, Infinity, xlarge);
                                 this.setRenderer(renderer);
                             }
-                            this._reCluster();
+                            if (!this.suspended) {
+                                this._reCluster();
+                            }
                         }));
                     }
                 }
