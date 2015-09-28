@@ -275,21 +275,23 @@ define([
 
         // Recluster when extent changes
         _reCluster: function () {
-            // update resolution
-            this._clusterResolution = this._map.extent.getWidth() / this._map.width;
-            // Smarter cluster, only query when we have to
-            // Fist time
-            if (!this._visitedExtent) {
-                this._getObjectIds(this._map.extent);
-            // New extent
-            } else if (!this._visitedExtent.contains(this._map.extent)) {
-                this._getObjectIds(this._map.extent);
-            // Been there, but is this a pan or zoom level change?
-            } else {
-                this._clusterGraphics();
+            if (!this.suspended) {
+                // update resolution
+                this._clusterResolution = this._map.extent.getWidth() / this._map.width;
+                // Smarter cluster, only query when we have to
+                // Fist time
+                if (!this._visitedExtent) {
+                    this._getObjectIds(this._map.extent);
+                // New extent
+                } else if (!this._visitedExtent.contains(this._map.extent)) {
+                    this._getObjectIds(this._map.extent);
+                // Been there, but is this a pan or zoom level change?
+                } else {
+                    this._clusterGraphics();
+                }
+                // update clustered extent
+                this._visitedExtent = this._visitedExtent ? this._visitedExtent.union(this._map.extent) : this._map.extent;
             }
-            // update clustered extent
-            this._visitedExtent = this._visitedExtent ? this._visitedExtent.union(this._map.extent) : this._map.extent;
         },
 
         // Function to set the current cluster graphic (lable and cluster) that was clicked.
@@ -366,10 +368,7 @@ define([
             this._query.returnGeometry = true;
             this._query.outFields = this._outFields;
             // listen to extent-change so data is re-clustered when zoom level changes
-            this._extentChange = on.pausable(map, 'extent-change', lang.hitch(this, '_reCluster'));
-            if (this.suspended) {
-                this._extentChange.pause();
-            }
+            this._extentChange = on(map, 'extent-change', lang.hitch(this, '_reCluster'));
             // listen for popup hide/show - hide clusters when pins are shown
             map.infoWindow.on('hide', lang.hitch(this, '_popupVisibilityChange'));
             map.infoWindow.on('show', lang.hitch(this, '_popupVisibilityChange'));
@@ -379,13 +378,6 @@ define([
                     layerAdded.remove();
                     if (!this.detailsLoaded) {
                         on.once(this, 'details-loaded', lang.hitch(this, function() {
-                            this.on('suspend', function(e) {
-                                this._extentChange.pause();
-                            });
-                            this.on('resume', function(e) {
-                                this._extentChange.resume();
-                                this._reCluster();
-                            });
                             if (!this.renderer) {
              
                                 this._singleSym = this._singleSym || new SimpleMarkerSymbol('circle', 16,
@@ -414,9 +406,7 @@ define([
                                 renderer.addBreak(100, Infinity, xlarge);
                                 this.setRenderer(renderer);
                             }
-                            if (!this.suspended) {
-                                this._reCluster();
-                            }
+                            this._reCluster();
                         }));
                     }
                 }
