@@ -67,7 +67,7 @@ define([
     function difference(arr1/*new objectIds*/, cacheCount/*objectId cache length*/, hash/*objecid hash*/) {
         //var start = new Date().valueOf();
         //console.debug('difference start');
-        
+
         var len = arr1.length, diff = [];
         if (!cacheCount) {
             diff = arr1;
@@ -77,10 +77,10 @@ define([
                     hash[value] = value;
                 }
             }
-        
+
             //var endEarly = new Date().valueOf();
             //console.debug('difference end', (endEarly - start)/1000);
-        
+
             return diff;
         }
         while (len--) {
@@ -93,7 +93,7 @@ define([
 
         //var end = new Date().valueOf();
         //console.debug('difference end', (end - start)/1000);
-        
+
         return diff;
     }
 
@@ -127,8 +127,8 @@ define([
       for (var i = 0; i < m.length; i++) {
         if (!window.console[m[i]]) {
           window.console[m[i]] = function() {};
-        }    
-      } 
+        }
+      }
     })();
 
     return declare([GraphicsLayer], {
@@ -165,6 +165,8 @@ define([
             //         Optional. Can provide a renderer for single features to override the default renderer.
             //     singleTemplate:    PopupTemplate?
             //         PopupTemplate</a>. Optional. Popup template used to format attributes for graphics that represent single points. Default shows all attributes as 'attribute = value' (not recommended).
+            //     disablePopup:    Boolean?
+            //         Optional. Disable infoWindow for cluster layer. Default is false.
             //     maxSingles:    Number?
             //         Optional. Threshold for whether or not to show graphics for points in a cluster. Default is 1000.
             //     font:    TextSymbol?
@@ -187,6 +189,7 @@ define([
                                     new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([85, 125, 140, 1]), 3),
                                     new Color([255, 255, 255, 1]));
             this._singleTemplate = options.singleTemplate || new PopupTemplate({ 'title': '', 'description': '{*}' });
+            this._disablePopup = options.disablePopup || false;
             this._maxSingles = options.maxSingles || 10000;
 
             this._font = options.font || new Font('10pt').setFamily('Arial');
@@ -349,7 +352,7 @@ define([
             }
         },
 
-        // Show or hide the currently selected cluster 
+        // Show or hide the currently selected cluster
         _showClickedCluster: function (show) {
             if (this._currentClusterGraphic && this._currentClusterLabel) {
                 if (show) {
@@ -379,7 +382,7 @@ define([
                     if (!this.detailsLoaded) {
                         on.once(this, 'details-loaded', lang.hitch(this, function() {
                             if (!this.renderer) {
-             
+
                                 this._singleSym = this._singleSym || new SimpleMarkerSymbol('circle', 16,
                                     new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([85, 125, 140, 1]), 3),
                                     new Color([255, 255, 255, .5]));
@@ -399,7 +402,7 @@ define([
                                 xlarge = new SimpleMarkerSymbol('circle', 110,
                                             new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([20,72,77,0.35]), 15),
                                             new Color([20,72,77,0.75]));
-                                
+
                                 renderer.addBreak(2, 10, small);
                                 renderer.addBreak(10, 25, medium);
                                 renderer.addBreak(25, 100, large);
@@ -438,7 +441,7 @@ define([
             // debug
             // this._startGetOids = new Date().valueOf();
             // console.debug('#_getObjectIds start');
-            
+
             if (this.url) {
                 var ext = extent || this._map.extent;
                 this._query.objectIds = null;
@@ -504,7 +507,7 @@ define([
             // debug
             //var start = new Date().valueOf();
             //console.debug('#inExtent start');
-            
+
             var ext = this._map.extent;
             var len = this._objectIdCache.length;
             var valid = [];
@@ -517,7 +520,7 @@ define([
                     valid.push(cached);
                 }
             }
-            
+
             // debug
             //var end = new Date().valueOf();
             //console.debug('#inExtent end', (end - start)/1000);
@@ -529,7 +532,7 @@ define([
             // debug
             // var end = new Date().valueOf();
             // console.debug('#_onFeaturesReturned end', (end - this._startGetOids)/1000);
-            
+
             var inExtent = this._inExtent();
             var features;
             if (this.native_geometryType === 'esriGeometryPolygon') {
@@ -545,13 +548,13 @@ define([
                 //this._clusterData.lenght = 0;  // Bug
                 this._clusterData.length = 0;
                 // Delete all graphics in layer (not local features)
-                this.clear();  
+                this.clear();
                 // Append actual feature to oid cache
                 arrayUtils.forEach(features, function(feat) {
                     this._clusterCache[feat.attributes[this._objectIdField]] = feat;
                 }, this);
                 // Refine features to draw
-                this._clusterData = concat(features, inExtent);   
+                this._clusterData = concat(features, inExtent);
             }
             //this._clusterData = concat(features, inExtent);
 
@@ -640,7 +643,7 @@ define([
                 // Unset cluster graphics
                 this._setClickedClusterGraphics(null);
                 // Remove graphics from layer
-                this.clearSingles(this._singles);                
+                this.clearSingles(this._singles);
                 // TODO - overkill, simplify for single clicks
                 var singles = this._getClusterSingles(e.graphic.attributes.clusterId);
                 arrayUtils.forEach(singles, function(g) {
@@ -650,18 +653,20 @@ define([
 
                 // Add graphic to layer
                 this._addSingleGraphics(singles);
-                this._map.infoWindow.setFeatures(singles);
-                // This hack helps show the popup to show on both sides of the dateline!
-                this._map.infoWindow.show(e.graphic.geometry);
-                this._map.infoWindow.show(e.graphic.geometry);
+                if (!this._disablePopup) {
+                    this._map.infoWindow.setFeatures(singles);
+                    // This hack helps show the popup to show on both sides of the dateline!
+                    this._map.infoWindow.show(e.graphic.geometry);
+                    this._map.infoWindow.show(e.graphic.geometry);
+                }
             }
             // Multi-cluster click, super zoom to cluster
-            else if (this._zoomOnClick && e.graphic.attributes.clusterCount > 1 && this._map.getZoom() !== this._map.getMaxZoom()) 
+            else if (this._zoomOnClick && e.graphic.attributes.clusterCount > 1 && this._map.getZoom() !== this._map.getMaxZoom())
             {
                 // Zoom to level that shows all points in cluster, not necessarily the extent
                 var extent = this._getClusterExtent(e.graphic);
                 if (extent.getWidth()) {
-                    this._map.setExtent(extent.expand(1.5), true);  
+                    this._map.setExtent(extent.expand(1.5), true);
                 } else {
                     this._map.centerAndZoom(e.graphic.geometry, this._map.getMaxZoom());
                 }
@@ -682,10 +687,12 @@ define([
                     this._showClickedCluster(false);
                     // Add graphics to layer
                     this._addSingleGraphics(singles);
-                    this._map.infoWindow.setFeatures(this._singles);
-                    // This hack helps show the popup to show on both sides of the dateline!
-                    this._map.infoWindow.show(e.graphic.geometry);
-                    this._map.infoWindow.show(e.graphic.geometry);
+                    if (!this._disablePopup) {
+                        this._map.infoWindow.setFeatures(this._singles);
+                        // This hack helps show the popup to show on both sides of the dateline!
+                        this._map.infoWindow.show(e.graphic.geometry);
+                        this._map.infoWindow.show(e.graphic.geometry);
+                    }
                 }
             }
         },
@@ -734,7 +741,7 @@ define([
                 // Or create a new cluster (of one)
                 if (!clustered) {
                     this._clusterCreate(feature, point);
-                }                
+                }
             }
 
             // debug
@@ -822,7 +829,7 @@ define([
                 this._showCluster(this._clusters[i]);
             }
             this.emit('clusters-shown', this._clusters);
-            
+
             // debug
             // var end = new Date().valueOf();
             // console.debug('#_showAllClusters end', (end - start)/1000);
@@ -831,7 +838,7 @@ define([
         // Add graphic and to layer
         _showCluster: function(c) {
             var point = new Point(c.x, c.y, this._sr);
-            
+
             var g = new Graphic(point, null, c.attributes);
             g.setSymbol(this._getRenderedSymbol(g));
             this.add(g);
@@ -874,7 +881,7 @@ define([
             for ( var i = 0; i < this._clusters.length; i++ ) {
                 extent = this._getClusteredExtent(this._clusters[i]);
                 if (!clusteredExtent) {
-                    clusteredExtent = extent; 
+                    clusteredExtent = extent;
                 } else {
                     clusteredExtent = clusteredExtent.union(extent);
                 }
@@ -898,7 +905,7 @@ define([
             // debug
             // var end = new Date().valueOf();
             // console.debug('#_getClusterSingles end', (end - start)/1000);
- 
+
             return singles;
         },
 
