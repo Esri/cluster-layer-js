@@ -48,7 +48,7 @@
         /* Extra popup styling */
 
         .esriPopup .title {
-            color: #A34527;
+            color: #C36F3E;
         }
         .esriPopup a {
             color: rgb(149,68,43);
@@ -211,7 +211,10 @@
         //popup.domNode.style.marginTop = "-17px";  // for pins only
 
         // Popup content
-        infoTemplate = new InfoTemplate("Seismic Activity > 4.0", "<p>Location: ${LOCATION}</p><p>Magnitude: ${OTHER_MAG1}</p><p>Date: ${YEAR}/${MONTH}/${DAY}</p>");
+        //infoTemplate = new InfoTemplate("Seismic Activity > 4.0", "<p>Location: ${NAME}</p><p>Magnitude: ${OTHER_MAG1}</p><p>Date: ${YEAR}/${MONTH}/${DAY}</p>");
+
+        infoTemplate = new InfoTemplate("<b>${CITY_NAME}</b>", "<p>COUNTRY: ${CNTRY_NAME}</p><p>STATE/PROVINCE: ${ADMIN_NAME}</p><p>POPULATION: ${POP}</p>");
+
 
         // Option 1: Esri marker for single locations and selections        
         // defaultSym = new createPictureSymbol("./images/blue-cluster-pin.png", 0, 8, 9, 16);
@@ -236,9 +239,9 @@
 
             // Add cluster renderer
             clusterLayer = new ClusterFeatureLayer({
-                //"url": "http://services.arcgis.com/oKgs2tbjK6zwTdvi/arcgis/rest/services/Major_World_Cities/FeatureServer/0",
+                "url": "http://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Cities/FeatureServer/0",
                 //"url": "http://services.arcgis.com/BG6nSlhZSAWtExvp/arcgis/rest/services/GlobalSeismographyNetwork/FeatureServer/0",
-                "url": "http://services1.arcgis.com/EwZCWiHAzgPcnGng/arcgis/rest/services/Magnitude_7_Earthquakes/FeatureServer/0",
+                // "url": "http://sampleserver3.arcgisonline.com/ArcGIS/rest/services/Earthquakes/Since_1970/MapServer/0",
                 "distance": 95,
                 "id": "clusters",
                 "labelColor": "#fff",
@@ -250,7 +253,7 @@
                 "zoomOnClick": true,
                 "showSingles": true,
                 "objectIdField": "FID",
-                outFields: ["LOCATION", "YEAR", "MONTH", "DAY", "OTHER_MAG1"]
+                outFields: ["*"]
             });
 
             renderer = new ClassBreaksRenderer(defaultSym, "clusterCount");
