@@ -7,7 +7,7 @@
     <title>Default Cluster Layer</title>  
     <link rel="shortcut icon" href="//esri.github.io/quickstart-map-js/images/favicon.ico">
     <!-- ArcGIS API for JavaScript CSS-->
-    <link rel="stylesheet" href="https://js.arcgis.com/3.13/esri/css/esri.css">
+    <link rel="stylesheet" href="https://js.arcgis.com/3.15/esri/css/esri.css">
 
     <style>
         html, body, #mapDiv {
@@ -69,7 +69,7 @@
     </script>
 
     <!-- ArcGIS API for JavaScript library references -->
-    <script src="https://js.arcgis.com/3.13compact"></script>
+    <script src="https://js.arcgis.com/3.15compact"></script>
     <script>
     require(["esri/map",
         "esri/dijit/Geocoder",
@@ -132,12 +132,12 @@
         popup.domNode.className += " light";
 
         // Popup content
-        infoTemplate = new InfoTemplate("<b>City Data</b>", "<p>NAME: ${NAME}</p><p>COUNTRY: ${COUNTRY}</p><p>CAPITAL: ${CAPITAL}</p><p>POPULATION: ${POPULATION}</p>");
+        infoTemplate = new InfoTemplate("<b>City Data</b>", "<p>NAME: ${CITY_NAME}</p><p>COUNTRY: ${CNTRY_NAME}</p><p>CAPITAL: ${ADMIN_NAME}</p><p>POPULATION: ${POP}</p>");
  
         // Create a feature layer to get feature service
         function addClusterLayer() {
             clusterLayer = new ClusterFeatureLayer({
-                "url": "http://services.arcgis.com/oKgs2tbjK6zwTdvi/arcgis/rest/services/Major_World_Cities/FeatureServer/0",
+                "url": "http://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/World_Cities/FeatureServer/0",
                 "distance": 75,
                 "id": "clusters",
                 "labelColor": "#fff",
@@ -147,7 +147,7 @@
                 "zoomOnClick": true,
                 "showSingles": true,
                 "objectIdField": "FID",
-                outFields: ["NAME", "COUNTRY", "POPULATION", "CAPITAL"]
+                outFields: ["CITY_NAME", "CNTRY_NAME", "POP", "ADMIN_NAME"]
             });
 
             map.addLayer(clusterLayer);

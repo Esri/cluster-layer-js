@@ -367,9 +367,9 @@ define([
             this._query.outFields = this._outFields;
             // listen to extent-change so data is re-clustered when zoom level changes
             this._extentChange = on.pausable(map, 'extent-change', lang.hitch(this, '_reCluster'));
-            if (this.suspended) {
-                this._extentChange.pause();
-            }
+            // if (this.suspended) {
+            //     this._extentChange.pause();
+            // }
             // listen for popup hide/show - hide clusters when pins are shown
             map.infoWindow.on('hide', lang.hitch(this, '_popupVisibilityChange'));
             map.infoWindow.on('show', lang.hitch(this, '_popupVisibilityChange'));
