@@ -797,6 +797,11 @@ define([
             }
             // give the graphic a cluster id
             feature.attributes.clusterId = p.attributes.clusterId = cluster.attributes.clusterId;
+
+            on.emit(this, "on-add-point-to-cluster", {
+              cluster: cluster,
+              point: p
+            });
         },
 
         // Point isn't within the clustering distance specified for the layer so create a new cluster for it
@@ -820,6 +825,10 @@ define([
                 }
             };
             this._clusters.push(cluster);
+            on.emit(this, "on-add-point-to-cluster", {
+              cluster: cluster,
+              point: p
+            });
         },
 
         // Add all graphics to layer and fire 'clusters-shown' event
