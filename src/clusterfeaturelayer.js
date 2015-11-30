@@ -949,7 +949,7 @@ define([
             if ( label.length === 1 ) {
                 // console.log('update label...found: ', label);
                 this.remove(label[0]);
-                var newLabel = new TextSymbol(c.attributes.clusterCount)
+                var newLabel = new TextSymbol(c.attributes.clusterCount.toString())
                     .setColor(new Color(this._clusterLabelColor))
                     .setOffset(0, this._clusterLabelOffset)
                     .setFont(this._font);
