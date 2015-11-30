@@ -852,7 +852,7 @@ define([
             }
 
             // show number of points in the cluster
-            var label = new TextSymbol(c.attributes.clusterCount)
+            var label = new TextSymbol(c.attributes.clusterCount.toString())
                 .setColor(new Color(this._clusterLabelColor))
                 .setOffset(0, this._clusterLabelOffset)
                 .setFont(this._font);
