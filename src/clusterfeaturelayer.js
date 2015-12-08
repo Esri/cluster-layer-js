@@ -169,9 +169,11 @@ define([
             //         Optional. Threshold for whether or not to show graphics for points in a cluster. Default is 1000.
             //     font:    TextSymbol?
             //         Optional. Font to use for TextSymbol. Default is 10pt, Arial.
+            //     maxZoom: Number?
+            //         Optional. Max zoom level to stop cluster the points. default value is this._map.getMaxZoom().
             //     spatialReference:    SpatialReference?
             //         Optional. Spatial reference for all graphics in the layer. This has to match the spatial reference of the map. Default is 102100. Omit this if the map uses basemaps in web mercator.
-            this._clusterTolerance = options.distance || 50;
+            this._clusterTolerance = this._initClusterTolerance = options.distance || 50;
             this._clusterData = [];
             this._clusters = [];
             this._clusterLabelColor = options.labelColor || '#000';
@@ -201,6 +203,7 @@ define([
             this._where = options.where || null;
             this._useDefaultSymbol = options.hasOwnProperty('useDefaultSymbol') ? options.useDefaultSymbol : false;
             this._returnLimit = options.returnLimit || 1000;
+            this._maxZoom = options.hasOwnProperty('maxZoom') ? options.maxZoom : undefined;
             this._singleRenderer = options.singleRenderer;
 
             this._objectIdField = options.objectIdField || 'OBJECTID';
@@ -277,6 +280,8 @@ define([
         _reCluster: function () {
             // update resolution
             this._clusterResolution = this._map.extent.getWidth() / this._map.width;
+            // set the distance to -1, so stop cluster in current zoom level
+            this._clusterTolerance = this._map.getZoom() >= this._maxZoom ? -1 : this._initClusterTolerance;
             // Smarter cluster, only query when we have to
             // Fist time
             if (!this._visitedExtent) {
@@ -365,6 +370,7 @@ define([
             this._query.outSpatialReference = map.spatialReference;
             this._query.returnGeometry = true;
             this._query.outFields = this._outFields;
+            this._maxZoom = this._maxZoom != undefined && this._maxZoom < map.getMaxZoom() ? this._maxZoom : map.getMaxZoom();
             // listen to extent-change so data is re-clustered when zoom level changes
             this._extentChange = on.pausable(map, 'extent-change', lang.hitch(this, '_reCluster'));
             // if (this.suspended) {
