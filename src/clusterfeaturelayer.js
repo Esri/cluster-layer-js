@@ -9,6 +9,7 @@ define([
 
     'esri/SpatialReference',
     'esri/geometry/Point',
+    'esri/geometry/Polygon',
     'esri/geometry/Multipoint',
     'esri/geometry/Extent',
     'esri/graphic',
@@ -35,7 +36,7 @@ define([
 
 ], function (
     declare, arrayUtils, lang, Color, connect, on, all,
-    SpatialReference, Point, Multipoint, Extent, Graphic,
+    SpatialReference, Point, Polygon, Multipoint, Extent, Graphic,
     esriConfig, normalizeUtils,
     SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol, TextSymbol, Font,
     ClassBreaksRenderer,
@@ -515,7 +516,7 @@ define([
             //var start = new Date().valueOf();
             //console.debug('#inExtent start');
             
-            var ext = this._map.extent;
+            var ext = this._getNormalizedExtentsPolygon();
             var len = this._objectIdCache.length;
             var valid = [];
 
@@ -713,12 +714,15 @@ define([
             // Remove all existing graphics from layer
             this.clear();
 
+            // test against a modified/scrubbed map extent polygon geometry
+            var testExtent = this._getNormalizedExtentsPolygon();
+
             // first time through, loop through the points
             for ( var j = 0, jl = this._clusterData.length; j < jl; j++ ) {
                 // see if the current feature should be added to a cluster
                 var point = this._clusterData[j].geometry || this._clusterData[j];
                 // TEST - Only cluster what's in the current extent.  TODO - better way to do this?
-                if (!this._map.extent.contains(point)) {
+                if (!testExtent.contains(point)) {
                     // Reset all other clusters and make sure their id is changed
                     this._clusterData[j].attributes.clusterId = -1;
                     continue;
@@ -962,6 +966,21 @@ define([
             } else {
                 console.log('didn not find exactly one label: ', label);
             }
+        },
+
+        _getNormalizedExtentsPolygon: function() {
+            // normalize map extent and deal with up to 2 Extent geom objects,
+            // convert to Polygon geom objects,
+            // and combine into a master Polygon geom object to test against
+            var normalizedExtents = this._map.extent.normalize();
+            var normalizedExtentPolygons = arrayUtils.map(normalizedExtents, function(extent) {
+                return Polygon.fromExtent(extent);
+            });
+            var masterPolygon = new Polygon(this._map.spatialReference);
+            arrayUtils.forEach(normalizedExtentPolygons, function(polygon) {
+                masterPolygon.addRing(polygon.rings[0]);
+            });
+            return masterPolygon;
         },
 
         // debug only...never called by the layer
