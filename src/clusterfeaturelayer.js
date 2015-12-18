@@ -9,6 +9,7 @@ define([
 
     'esri/SpatialReference',
     'esri/geometry/Point',
+    'esri/geometry/Polygon',
     'esri/geometry/Multipoint',
     'esri/geometry/Extent',
     'esri/graphic',
@@ -35,7 +36,7 @@ define([
 
 ], function (
     declare, arrayUtils, lang, Color, connect, on, all,
-    SpatialReference, Point, Multipoint, Extent, Graphic,
+    SpatialReference, Point, Polygon, Multipoint, Extent, Graphic,
     esriConfig, normalizeUtils,
     SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol, TextSymbol, Font,
     ClassBreaksRenderer,
@@ -67,7 +68,7 @@ define([
     function difference(arr1/*new objectIds*/, cacheCount/*objectId cache length*/, hash/*objecid hash*/) {
         //var start = new Date().valueOf();
         //console.debug('difference start');
-        
+
         var len = arr1.length, diff = [];
         if (!cacheCount) {
             diff = arr1;
@@ -77,10 +78,10 @@ define([
                     hash[value] = value;
                 }
             }
-        
+
             //var endEarly = new Date().valueOf();
             //console.debug('difference end', (endEarly - start)/1000);
-        
+
             return diff;
         }
         while (len--) {
@@ -93,7 +94,7 @@ define([
 
         //var end = new Date().valueOf();
         //console.debug('difference end', (end - start)/1000);
-        
+
         return diff;
     }
 
@@ -127,8 +128,8 @@ define([
       for (var i = 0; i < m.length; i++) {
         if (!window.console[m[i]]) {
           window.console[m[i]] = function() {};
-        }    
-      } 
+        }
+      }
     })();
 
     return declare([GraphicsLayer], {
@@ -165,6 +166,8 @@ define([
             //         Optional. Can provide a renderer for single features to override the default renderer.
             //     singleTemplate:    PopupTemplate?
             //         PopupTemplate</a>. Optional. Popup template used to format attributes for graphics that represent single points. Default shows all attributes as 'attribute = value' (not recommended).
+            //     disablePopup:    Boolean?
+            //         Optional. Disable infoWindow for cluster layer. Default is false.
             //     maxSingles:    Number?
             //         Optional. Threshold for whether or not to show graphics for points in a cluster. Default is 1000.
             //     font:    TextSymbol?
@@ -187,6 +190,7 @@ define([
                                     new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([85, 125, 140, 1]), 3),
                                     new Color([255, 255, 255, 1]));
             this._singleTemplate = options.singleTemplate || new PopupTemplate({ 'title': '', 'description': '{*}' });
+            this._disablePopup = options.disablePopup || false;
             this._maxSingles = options.maxSingles || 10000;
 
             this._font = options.font || new Font('10pt').setFamily('Arial');
@@ -275,21 +279,23 @@ define([
 
         // Recluster when extent changes
         _reCluster: function () {
-            // update resolution
-            this._clusterResolution = this._map.extent.getWidth() / this._map.width;
-            // Smarter cluster, only query when we have to
-            // Fist time
-            if (!this._visitedExtent) {
-                this._getObjectIds(this._map.extent);
-            // New extent
-            } else if (!this._visitedExtent.contains(this._map.extent)) {
-                this._getObjectIds(this._map.extent);
-            // Been there, but is this a pan or zoom level change?
-            } else {
-                this._clusterGraphics();
+            if (!this.suspended) {
+                // update resolution
+                this._clusterResolution = this._map.extent.getWidth() / this._map.width;
+                // Smarter cluster, only query when we have to
+                // Fist time
+                if (!this._visitedExtent) {
+                    this._getObjectIds(this._map.extent);
+                // New extent
+                } else if (!this._visitedExtent.contains(this._map.extent)) {
+                    this._getObjectIds(this._map.extent);
+                // Been there, but is this a pan or zoom level change?
+                } else {
+                    this._clusterGraphics();
+                }
+                // update clustered extent
+                this._visitedExtent = this._visitedExtent ? this._visitedExtent.union(this._map.extent) : this._map.extent;
             }
-            // update clustered extent
-            this._visitedExtent = this._visitedExtent ? this._visitedExtent.union(this._map.extent) : this._map.extent;
         },
 
         // Function to set the current cluster graphic (lable and cluster) that was clicked.
@@ -347,7 +353,7 @@ define([
             }
         },
 
-        // Show or hide the currently selected cluster 
+        // Show or hide the currently selected cluster
         _showClickedCluster: function (show) {
             if (this._currentClusterGraphic && this._currentClusterLabel) {
                 if (show) {
@@ -367,9 +373,6 @@ define([
             this._query.outFields = this._outFields;
             // listen to extent-change so data is re-clustered when zoom level changes
             this._extentChange = on.pausable(map, 'extent-change', lang.hitch(this, '_reCluster'));
-            // if (this.suspended) {
-            //     this._extentChange.pause();
-            // }
             // listen for popup hide/show - hide clusters when pins are shown
             map.infoWindow.on('hide', lang.hitch(this, '_popupVisibilityChange'));
             map.infoWindow.on('show', lang.hitch(this, '_popupVisibilityChange'));
@@ -379,15 +382,8 @@ define([
                     layerAdded.remove();
                     if (!this.detailsLoaded) {
                         on.once(this, 'details-loaded', lang.hitch(this, function() {
-                            this.on('suspend', function(e) {
-                                this._extentChange.pause();
-                            });
-                            this.on('resume', function(e) {
-                                this._extentChange.resume();
-                                this._reCluster();
-                            });
                             if (!this.renderer) {
-             
+
                                 this._singleSym = this._singleSym || new SimpleMarkerSymbol('circle', 16,
                                     new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([85, 125, 140, 1]), 3),
                                     new Color([255, 255, 255, .5]));
@@ -407,16 +403,14 @@ define([
                                 xlarge = new SimpleMarkerSymbol('circle', 110,
                                             new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([20,72,77,0.35]), 15),
                                             new Color([20,72,77,0.75]));
-                                
+
                                 renderer.addBreak(2, 10, small);
                                 renderer.addBreak(10, 25, medium);
                                 renderer.addBreak(25, 100, large);
                                 renderer.addBreak(100, Infinity, xlarge);
                                 this.setRenderer(renderer);
                             }
-                            if (!this.suspended) {
-                                this._reCluster();
-                            }
+                            this._reCluster();
                         }));
                     }
                 }
@@ -448,7 +442,7 @@ define([
             // debug
             // this._startGetOids = new Date().valueOf();
             // console.debug('#_getObjectIds start');
-            
+
             if (this.url) {
                 var ext = extent || this._map.extent;
                 this._query.objectIds = null;
@@ -514,8 +508,7 @@ define([
             // debug
             //var start = new Date().valueOf();
             //console.debug('#inExtent start');
-            
-            var ext = this._map.extent;
+            var ext = this._getNormalizedExtentsPolygon();
             var len = this._objectIdCache.length;
             var valid = [];
 
@@ -527,7 +520,7 @@ define([
                     valid.push(cached);
                 }
             }
-            
+
             // debug
             //var end = new Date().valueOf();
             //console.debug('#inExtent end', (end - start)/1000);
@@ -539,7 +532,7 @@ define([
             // debug
             // var end = new Date().valueOf();
             // console.debug('#_onFeaturesReturned end', (end - this._startGetOids)/1000);
-            
+
             var inExtent = this._inExtent();
             var features;
             if (this.native_geometryType === 'esriGeometryPolygon') {
@@ -555,13 +548,13 @@ define([
                 //this._clusterData.lenght = 0;  // Bug
                 this._clusterData.length = 0;
                 // Delete all graphics in layer (not local features)
-                this.clear();  
+                this.clear();
                 // Append actual feature to oid cache
                 arrayUtils.forEach(features, function(feat) {
                     this._clusterCache[feat.attributes[this._objectIdField]] = feat;
                 }, this);
                 // Refine features to draw
-                this._clusterData = concat(features, inExtent);   
+                this._clusterData = concat(features, inExtent);
             }
             //this._clusterData = concat(features, inExtent);
 
@@ -650,7 +643,7 @@ define([
                 // Unset cluster graphics
                 this._setClickedClusterGraphics(null);
                 // Remove graphics from layer
-                this.clearSingles(this._singles);                
+                this.clearSingles(this._singles);
                 // TODO - overkill, simplify for single clicks
                 var singles = this._getClusterSingles(e.graphic.attributes.clusterId);
                 arrayUtils.forEach(singles, function(g) {
@@ -660,18 +653,20 @@ define([
 
                 // Add graphic to layer
                 this._addSingleGraphics(singles);
-                this._map.infoWindow.setFeatures(singles);
-                // This hack helps show the popup to show on both sides of the dateline!
-                this._map.infoWindow.show(e.graphic.geometry);
-                this._map.infoWindow.show(e.graphic.geometry);
+                if (!this._disablePopup) {
+                    this._map.infoWindow.setFeatures(singles);
+                    // This hack helps show the popup to show on both sides of the dateline!
+                    this._map.infoWindow.show(e.graphic.geometry);
+                    this._map.infoWindow.show(e.graphic.geometry);
+                }
             }
             // Multi-cluster click, super zoom to cluster
-            else if (this._zoomOnClick && e.graphic.attributes.clusterCount > 1 && this._map.getZoom() !== this._map.getMaxZoom()) 
+            else if (this._zoomOnClick && e.graphic.attributes.clusterCount > 1 && this._map.getZoom() !== this._map.getMaxZoom())
             {
                 // Zoom to level that shows all points in cluster, not necessarily the extent
                 var extent = this._getClusterExtent(e.graphic);
                 if (extent.getWidth()) {
-                    this._map.setExtent(extent.expand(1.5), true);  
+                    this._map.setExtent(extent.expand(1.5), true);
                 } else {
                     this._map.centerAndZoom(e.graphic.geometry, this._map.getMaxZoom());
                 }
@@ -692,10 +687,12 @@ define([
                     this._showClickedCluster(false);
                     // Add graphics to layer
                     this._addSingleGraphics(singles);
-                    this._map.infoWindow.setFeatures(this._singles);
-                    // This hack helps show the popup to show on both sides of the dateline!
-                    this._map.infoWindow.show(e.graphic.geometry);
-                    this._map.infoWindow.show(e.graphic.geometry);
+                    if (!this._disablePopup) {
+                        this._map.infoWindow.setFeatures(this._singles);
+                        // This hack helps show the popup to show on both sides of the dateline!
+                        this._map.infoWindow.show(e.graphic.geometry);
+                        this._map.infoWindow.show(e.graphic.geometry);
+                    }
                 }
             }
         },
@@ -713,12 +710,15 @@ define([
             // Remove all existing graphics from layer
             this.clear();
 
+            // test against a modified/scrubbed map extent polygon geometry
+            var testExtent = this._getNormalizedExtentsPolygon();
+
             // first time through, loop through the points
             for ( var j = 0, jl = this._clusterData.length; j < jl; j++ ) {
                 // see if the current feature should be added to a cluster
                 var point = this._clusterData[j].geometry || this._clusterData[j];
                 // TEST - Only cluster what's in the current extent.  TODO - better way to do this?
-                if (!this._map.extent.contains(point)) {
+                if (!testExtent.contains(point)) {
                     // Reset all other clusters and make sure their id is changed
                     this._clusterData[j].attributes.clusterId = -1;
                     continue;
@@ -744,7 +744,7 @@ define([
                 // Or create a new cluster (of one)
                 if (!clustered) {
                     this._clusterCreate(feature, point);
-                }                
+                }
             }
 
             // debug
@@ -832,7 +832,7 @@ define([
                 this._showCluster(this._clusters[i]);
             }
             this.emit('clusters-shown', this._clusters);
-            
+
             // debug
             // var end = new Date().valueOf();
             // console.debug('#_showAllClusters end', (end - start)/1000);
@@ -841,7 +841,7 @@ define([
         // Add graphic and to layer
         _showCluster: function(c) {
             var point = new Point(c.x, c.y, this._sr);
-            
+
             var g = new Graphic(point, null, c.attributes);
             g.setSymbol(this._getRenderedSymbol(g));
             this.add(g);
@@ -884,7 +884,7 @@ define([
             for ( var i = 0; i < this._clusters.length; i++ ) {
                 extent = this._getClusteredExtent(this._clusters[i]);
                 if (!clusteredExtent) {
-                    clusteredExtent = extent; 
+                    clusteredExtent = extent;
                 } else {
                     clusteredExtent = clusteredExtent.union(extent);
                 }
@@ -908,7 +908,7 @@ define([
             // debug
             // var end = new Date().valueOf();
             // console.debug('#_getClusterSingles end', (end - start)/1000);
- 
+
             return singles;
         },
 
@@ -962,6 +962,21 @@ define([
             } else {
                 console.log('didn not find exactly one label: ', label);
             }
+        },
+
+        _getNormalizedExtentsPolygon: function() {
+            // normalize map extent and deal with up to 2 Extent geom objects,
+            // convert to Polygon geom objects,
+            // and combine into a master Polygon geom object to test against
+            var normalizedExtents = this._map.extent.normalize();
+            var normalizedExtentPolygons = arrayUtils.map(normalizedExtents, function(extent) {
+                return Polygon.fromExtent(extent);
+            });
+            var masterPolygon = new Polygon(this._map.spatialReference);
+            arrayUtils.forEach(normalizedExtentPolygons, function(polygon) {
+                masterPolygon.addRing(polygon.rings[0]);
+            });
+            return masterPolygon;
         },
 
         // debug only...never called by the layer

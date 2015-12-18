@@ -87,13 +87,15 @@ map.addLayer(clusterLayer);
     //         Optional. Can provide a renderer for single features to override the default renderer.
     //     singleTemplate:    PopupTemplate?
     //         PopupTemplate. Optional. Popup template used to format attributes for graphics that represent single points. Default shows all attributes as 'attribute = value' (not recommended).
+    //     disablePopup:    Boolean?
+    //         Optional. Disable infoWindow for cluster layer. Default is false.
     //     maxSingles:    Number?
     //         Optional. Threshold for whether or not to show graphics for points in a cluster. Default is 1000.
     //     font:    TextSymbol?
     //         Optional. Font to use for TextSymbol. Default is 10pt, Arial.
     //     spatialReference:    SpatialReference?
     //         Optional. Spatial reference for all graphics in the layer. This has to match the spatial reference of the map. Default is 102100. Omit this if the map uses basemaps in web mercator.
-``` 
+```
 
 ## Credits
 
