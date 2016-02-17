@@ -659,6 +659,7 @@ define([
                     this._map.infoWindow.show(e.graphic.geometry);
                     this._map.infoWindow.show(e.graphic.geometry);
                 }
+                this.emit('singles-click',{singles: singles});
             }
             // Multi-cluster click, super zoom to cluster
             else if (this._zoomOnClick && e.graphic.attributes.clusterCount > 1 && this._map.getZoom() !== this._map.getMaxZoom())
@@ -693,6 +694,7 @@ define([
                         this._map.infoWindow.show(e.graphic.geometry);
                         this._map.infoWindow.show(e.graphic.geometry);
                     }
+                    this.emit('singles-click',{singles: singles});
                 }
             }
         },
