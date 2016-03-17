@@ -466,6 +466,7 @@ define([
         },
 
         _onIdsReturned: function (results) {
+            this.emit('ids-returned',{results: results});
             var uncached = difference(results, this._objectIdCache.length, this._objectIdHash);
             this._objectIdCache = concat(this._objectIdCache, uncached);
             if (uncached && uncached.length) {
