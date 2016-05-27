@@ -5,6 +5,7 @@ define([
     'dojo/_base/Color',
     'dojo/_base/connect',
     'dojo/on',
+    'dojo/Deferred',
     'dojo/promise/all',
 
     'esri/SpatialReference',
@@ -35,7 +36,7 @@ define([
     'esri/tasks/QueryTask'
 
 ], function (
-    declare, arrayUtils, lang, Color, connect, on, all,
+    declare, arrayUtils, lang, Color, connect, on, Deferred, all,
     SpatialReference, Point, Polygon, Multipoint, Extent, Graphic,
     esriConfig, normalizeUtils,
     SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol, TextSymbol, Font,
@@ -143,6 +144,8 @@ define([
             //        Optional. Defines the OBJECTID field of service. Default is 'OBJECTID'.
             //     where:    String?
             //        Optional. Where clause for query.
+            //     queryAttachments:    Boolean?
+            //        Optional. If true, features within the current extent will have their attachments queried and an "attachmentInfos" object will be added to the feature object.
             //     useDefaultSymbol:    Boolean?
             //        Optional. Use the services default symbology for single features.
             //     returnLimit:    Number?
@@ -203,6 +206,7 @@ define([
             this._outFields = options.outFields || ['*'];
             this.queryTask = new QueryTask(this.url);
             this._where = options.where || null;
+            this._queryAttachments = options.queryAttachments || false;
             this._useDefaultSymbol = options.hasOwnProperty('useDefaultSymbol') ? options.useDefaultSymbol : false;
             this._returnLimit = options.returnLimit || 1000;
             this._singleRenderer = options.singleRenderer;
@@ -477,7 +481,7 @@ define([
                     while(uncached.length) {
                         // Improve performance by just passing list of IDs
                         this._query.objectIds = uncached.splice(0, this._returnLimit - 1);
-                        queries.push(this.queryTask.execute(this._query));
+                        queries.push(this._queryFeatures());
                     }
                     all(queries).then(lang.hitch(this, function(res) {
                         var features = arrayUtils.map(res, function(r) {
@@ -490,7 +494,7 @@ define([
                 } else {
                     // Improve performance by just passing list of IDs
                     this._query.objectIds = uncached.splice(0, this._returnLimit - 1);
-                    this.queryTask.execute(this._query).then(
+                    this._queryFeatures().then(
                         lang.hitch(this, '_onFeaturesReturned'), this._onError
                     );
                 }
@@ -502,6 +506,56 @@ define([
             } else {
                 this.clear();
             }
+        },
+
+        _queryFeatures: function() {
+          var deferred = new Deferred();
+          var queries = {
+            features: this.queryTask.execute(this._query),
+          };
+
+          if (this._queryAttachments) {
+            var attachmentQueryUrl = this.url + (this.url.substr(-1) === '/' ? '' : '/') + 'queryAttachments';
+            var attachmentQuery = esriRequest({
+              url: attachmentQueryUrl,
+              content: {
+                objectIds: this._query.objectIds,
+                f: 'json'
+              },
+              handleAs: 'json'
+            },{
+              usePost: true
+            });
+
+            queries.attachments = attachmentQuery;
+          }
+
+          all(queries).then(lang.hitch(this,function(result) {
+            var objectIdField = lang.getObject('features.objectIdFieldName',false,result);
+            var features = lang.getObject('features.features',false,result);
+            var attachments = lang.getObject('attachments.attachmentGroups',false,result);
+
+            if (this._queryAttachments && objectIdField && features && attachments) {
+              // extend features with corresponding attachments
+              arrayUtils.forEach(features,function(ftr) {
+                var ftrId = ftr.attributes[objectIdField];
+                var ftrAttachments = arrayUtils.filter(attachments, function(attachment) {
+                  return attachment.parentObjectId === ftrId;
+                })[0];
+
+                lang.mixin(ftr,{
+                  attachmentInfos: lang.getObject('attachmentInfos',false,ftrAttachments)
+                });
+              });
+              deferred.resolve(result.features);
+            } else if (!this._queryAttachments && features) {
+              deferred.resolve(result.features);
+            } else {
+              deferred.reject(result.features);
+            }
+          }),deferred.reject);
+
+          return deferred;
         },
 
         // Return a cache of features in the current extent
