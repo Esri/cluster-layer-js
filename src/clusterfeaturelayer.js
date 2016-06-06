@@ -722,7 +722,7 @@ define([
                 // Zoom to level that shows all points in cluster, not necessarily the extent
                 var extent = this._getClusterExtent(e.graphic);
                 if (extent.getWidth()) {
-                    this._map.setExtent(extent.expand(1.5), true);
+                    this._map.setExtent(extent.expand(1.15), true);
                 } else {
                     this._map.centerAndZoom(e.graphic.geometry, this._map.getMaxZoom());
                 }
