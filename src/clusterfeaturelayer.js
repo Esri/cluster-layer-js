@@ -571,7 +571,7 @@ define([
             while (len--) {
                 var oid = this._objectIdCache[len];
                 var cached = this._clusterCache[oid];
-                if (cached && ext.contains(cached.geometry)) {
+                if (cached && cached.geometry && cached.geometry.spatialReference && ext.contains(cached.geometry)) {
                     valid.push(cached);
                 }
             }
