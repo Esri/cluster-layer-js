@@ -146,6 +146,8 @@ define([
             //        Optional. Where clause for query.
             //     queryAttachments:    Boolean?
             //        Optional. If true, features within the current extent will have their attachments queried and an "attachmentInfos" object will be added to the feature object.
+            //     filterFeaturesOnResponse: false or function(features) {return features}
+            //        Optional. If a function, this function will be called with the current feature array before if is added to the map and exects an array of features to be returned.
             //     useDefaultSymbol:    Boolean?
             //        Optional. Use the services default symbology for single features.
             //     returnLimit:    Number?
@@ -207,6 +209,7 @@ define([
             this.queryTask = new QueryTask(this.url);
             this._where = options.where || null;
             this._queryAttachments = options.queryAttachments || false;
+            this._filterFeaturesOnResponse = options.filterFeaturesOnResponse || false;
             this._useDefaultSymbol = options.hasOwnProperty('useDefaultSymbol') ? options.useDefaultSymbol : false;
             this._returnLimit = options.returnLimit || 1000;
             this._singleRenderer = options.singleRenderer;
@@ -478,7 +481,7 @@ define([
                 this._query.geometry = null;
                 var queries = [];
                 if (uncached.length > this._returnLimit) {
-                    while(uncached.length) {
+                    while (uncached.length) {
                         // Improve performance by just passing list of IDs
                         this._query.objectIds = uncached.splice(0, this._returnLimit - 1);
                         queries.push(this._queryFeatures());
@@ -595,6 +598,11 @@ define([
             } else {
                 features = results.features;
             }
+
+            if (typeof this._filterFeaturesOnResponse === 'function') {
+                features = this._filterFeaturesOnResponse(features) || features;
+            }
+
             var len = features.length;
             //this._clusterData.length = 0;
             //this.clear();
