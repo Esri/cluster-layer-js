@@ -288,16 +288,21 @@ define([
                     this._getObjectIds(this._map.extent);
                 // New extent
                 } else if (!this._visitedExtent.contains(this._map.extent)) {
-                    this._getObjectIds(this._map.extent);
-                // Been there, but is this a pan or zoom level change?
-                } else {
+                    this._getObjectIds(this._map.extent);                
+                }else if (this._extentEquals(this._lastDrawnExtent, this._map.extent)) {
+                    // already drawn - do nothing  @vichemar's solutions
+                }  else {
+                    // Been there, but is this a pan or zoom level change?
                     this._clusterGraphics();
                 }
                 // update clustered extent
                 this._visitedExtent = this._visitedExtent ? this._visitedExtent.union(this._map.extent) : this._map.extent;
+                this._lastDrawnExtent = this._map.extent;
             }
         },
-
+        _extentEquals: function (extent1, extetn2) {
+            return (extent1.xmin == extetn2.xmin) && (extent1.xmax == extetn2.xmax) && (extent1.ymin == extetn2.ymin) && (extent1.ymax == extetn2.ymax)
+        },
         // Function to set the current cluster graphic (lable and cluster) that was clicked.
         _setClickedClusterGraphics: function (g) {
             // Reset
